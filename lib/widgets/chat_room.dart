@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lanchat/models/app_model.dart';
-import 'package:lanchat/widgets/text_composer.dart';
 import 'package:lanchat/widgets/message.dart';
+import 'package:lanchat/widgets/text_composer.dart';
 import 'package:provider/provider.dart';
 
 class ChatRoom extends StatelessWidget {

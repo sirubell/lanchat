@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -9,19 +10,23 @@ import 'package:lanchat/models/file_message_model.dart';
 import 'package:lanchat/models/friend_model.dart';
 import 'package:lanchat/models/message_model.dart';
 import 'package:lanchat/models/text_message_model.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 class AppModel extends ChangeNotifier {
   final Map<String, FriendModel> _friends = {};
-  final Map<String, List<int>> _buffer = {};
-  final String name = 'Default Name';
-  ServerSocket? server;
+  String? _ip;
+  String name = 'Default Name';
+  HttpServer? server;
   Function? showSnackBar;
 
   AppModel() {
-    ServerSocket.bind(InternetAddress.anyIPv4, port).then((server) {
+    final info = NetworkInfo();
+    info.getWifiIP().then((value) => _ip = value);
+
+    HttpServer.bind(InternetAddress.anyIPv4, port).then((server) {
       this.server = server;
-      server.listen((client) {
-        _handleConnection(client);
+      server.listen((HttpRequest request) {
+        _handleRequest(request);
       });
     });
   }
@@ -29,153 +34,134 @@ class AppModel extends ChangeNotifier {
   UnmodifiableListView<FriendModel> get friends =>
       UnmodifiableListView(_friends.entries.map((e) => e.value).toList());
 
+  String get ip => _ip ?? '';
+
   Future<void> addFriend(String ip) async {
-    final client = await Socket.connect(ip, port);
-    client.writeln(name);
-    client.writeln("AskName");
-    client.write(socketEndIndicator);
-    client.flush();
-    _handleConnection(client);
+    final client = HttpClient();
+    try {
+      HttpClientRequest request = await client.get(ip, port, '/AskName');
+      HttpClientResponse response = await request.close();
+      response.listen((data) {
+        Map<String, dynamic> json = jsonDecode(String.fromCharCodes(data));
+        String ip = json['ip'];
+        String name = utf8.decode(json['name'].cast<int>());
+
+        _ensureFriendExists(ip, name);
+      });
+    } finally {
+      client.close();
+    }
   }
 
   FriendModel? friend(String ip) => _friends[ip];
 
-  void replyName(Socket client) {
-    client.writeln(name);
-    client.writeln("ReplyName");
-    client.write(socketEndIndicator);
-    client.flush();
-  }
-
   Future<void> sendMessage(String ip, MessageModel message) async {
-    _friends[ip]?.messages.add(message);
+    _friends[ip]!.messages.add(message);
     notifyListeners();
 
-    debugPrint(
-        "Send file size (+time +name): ${message.getMessage().length.toString()}");
-
-    final socket = await Socket.connect(ip, port);
-
-    socket.writeln(name);
-    socket.writeln(message.getMessageType());
-    socket.write(message.getMessage());
-    socket.write(socketEndIndicator);
-    socket.flush();
+    final client = HttpClient();
+    try {
+      HttpClientRequest request =
+          await client.post(ip, port, '/${message.getMessageType()}');
+      request.write(jsonEncode({
+        'ip': this.ip,
+        'name': utf8.encode(name),
+        'time': message.time.toString(),
+        'data': message.getMessage(),
+      }));
+      request.close();
+    } finally {
+      client.close();
+    }
   }
 
   void setShowSnackBar(Function f) {
     showSnackBar = f;
   }
 
-  void _handleConnection(Socket client) {
-    client.listen(
-      (Uint8List data) {
-        final ip = client.remoteAddress.address;
-        if (_buffer[ip] == null) {
-          _buffer[ip] = [];
-        }
-
-        if (data.length < socketEndIndicator.length) {
-          _buffer[ip]!.addAll(data);
-        } else {
-          if (String.fromCharCodes(
-                  data.sublist(data.length - socketEndIndicator.length)) ==
-              socketEndIndicator) {
-            _buffer[ip]!.addAll(
-              data.sublist(0, data.length - socketEndIndicator.length),
-            );
-
-            _handleData(client);
-            client.destroy();
-          } else {
-            _buffer[ip]!.addAll(data);
-          }
-        }
-      },
-      onError: (error) {
-        client.destroy();
-      },
-      onDone: () {
-        client.destroy();
-      },
-    );
-  }
-
-  void _handleData(Socket client) {
-    final ip = client.remoteAddress.address;
-    final data = _buffer[ip]!;
-
-    final nameidx = data.indexOf('\n'.codeUnitAt(0));
-    final actionidx = data.indexOf('\n'.codeUnitAt(0), nameidx + 1);
-    final name = String.fromCharCodes(data, 0, nameidx);
-    final action = String.fromCharCodes(data, nameidx + 1, actionidx);
-    final message = data.sublist(actionidx + 1);
-
-    debugPrint("Received action: $action");
-
-    _buffer[ip]!.clear();
-
-    if (!_friends.containsKey(ip)) {
-      _friends[ip] = FriendModel(ip: ip);
+  void _ensureFriendExists(String ip, String name) {
+    if (_friends[ip] == null) {
+      _friends[ip] = FriendModel(ip: ip, name: name);
       showSnackBar?.call('Successfully add a new friend');
     }
     _friends[ip]!.setName(name);
     notifyListeners();
+  }
 
-    switch (action) {
-      case "AskName":
-        replyName(client);
+  void _handleAskName(HttpRequest request) {
+    request.response.write(jsonEncode({
+      'ip': ip,
+      'name': utf8.encode(name),
+    }));
+    request.response.close();
+  }
+
+  void _handleFile(HttpRequest request) {
+    List<int> buffer = [];
+    request.listen((Uint8List data) {
+      buffer.addAll(data);
+    }, onDone: () {
+      Map<String, dynamic> json = jsonDecode(String.fromCharCodes(buffer));
+      String ip = json['ip'];
+      String name = utf8.decode(json['name'].cast<int>());
+      String time = json['time'];
+      Map<String, dynamic> file =
+          jsonDecode(String.fromCharCodes(json['data'].cast<int>()));
+      String filename = utf8.decode(file['filename'].cast<int>());
+      Uint8List filedata = Uint8List.fromList(file['filedata'].cast<int>());
+
+      _ensureFriendExists(ip, name);
+
+      _friends[ip]!.messages.add(FileMessageModel(
+            isMe: false,
+            time: DateTime.parse(time),
+            file: PlatformFile(
+              name: filename,
+              size: filedata.length,
+              bytes: filedata,
+            ),
+          ));
+      notifyListeners();
+      request.response.close();
+    });
+  }
+
+  void _handleRequest(HttpRequest request) {
+    debugPrint(request.uri.path);
+
+    switch (request.uri.path) {
+      case '/Ping':
+        request.response.write('Pong');
         break;
-      case "ReplyName":
+      case '/AskName':
+        _handleAskName(request);
         break;
-      default:
-        _receiveMessage(ip, action, Uint8List.fromList(message));
+      case '/Text':
+        _handleText(request);
+        break;
+      case '/File':
+        _handleFile(request);
+        break;
     }
   }
 
-  void _receiveFileMessage(String ip, String time, Uint8List data) async {
-    final nameidx = data.indexOf('\n'.codeUnitAt(0));
-    final name = String.fromCharCodes(data, 0, nameidx);
-    final filedata = data.sublist(nameidx + 1);
-    debugPrint("Received file size: ${filedata.length.toString()}");
+  void _handleText(HttpRequest request) {
+    request.listen((Uint8List data) {
+      Map<String, dynamic> json = jsonDecode(String.fromCharCodes(data));
+      String ip = json['ip'];
+      String name = utf8.decode(json['name'].cast<int>());
+      String time = json['time'];
+      String text = utf8.decode(json['data'].cast<int>());
 
-    _friends[ip]!.messages.add(FileMessageModel(
-          isMe: false,
-          time: DateTime.parse(time),
-          file: PlatformFile(
-            name: name,
-            size: filedata.length,
-            bytes: filedata,
-          ),
-        ));
-    notifyListeners();
-  }
+      _ensureFriendExists(ip, name);
 
-  void _receiveMessage(String ip, String action, Uint8List message) {
-    final timeidx = message.indexOf('\n'.codeUnitAt(0));
-    final time = String.fromCharCodes(message, 0, timeidx);
-    final data = message.sublist(timeidx + 1);
-
-    switch (action) {
-      case "Text":
-        _receiveTextMessage(ip, time, data);
-        break;
-      case "Image":
-        // _receiveImageMessage(ip, time, data);
-        break;
-      case "File":
-        _receiveFileMessage(ip, time, data);
-        break;
-      default:
-    }
-  }
-
-  void _receiveTextMessage(String ip, String time, Uint8List data) async {
-    _friends[ip]!.messages.add(TextMessageModel(
-          isMe: false,
-          time: DateTime.parse(time),
-          text: String.fromCharCodes(data),
-        ));
-    notifyListeners();
+      _friends[ip]!.messages.add(TextMessageModel(
+            isMe: false,
+            time: DateTime.parse(time),
+            text: text,
+          ));
+      notifyListeners();
+      request.response.close();
+    });
   }
 }

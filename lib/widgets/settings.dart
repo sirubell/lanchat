@@ -1,31 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:network_info_plus/network_info_plus.dart';
+import 'package:lanchat/models/app_model.dart';
+import 'package:provider/provider.dart';
 
 class Settings extends StatelessWidget {
-  static final info = NetworkInfo();
   const Settings({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    String ip = context.watch<AppModel>().ip;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: Center(
           child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FutureBuilder<String?>(
-              future: info.getWifiIP(),
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                String wifiIP;
-                if (snapshot.hasData) {
-                  wifiIP = snapshot.data;
-                } else if (snapshot.hasError) {
-                  wifiIP = "Could not get IP address";
-                } else {
-                  wifiIP = "Getting IP address";
-                }
-                return Text("My IP: $wifiIP");
-              }),
+          Text("My IP: $ip"),
         ],
       )),
     );

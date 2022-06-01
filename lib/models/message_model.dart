@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 
 abstract class MessageModel {
@@ -5,9 +7,9 @@ abstract class MessageModel {
   final DateTime time;
   MessageModel({required this.isMe, required this.time});
 
+  List<int> getMessage();
   String getMessageType();
-  String getMessage() => "${time.toString()}\n";
 
-  Widget? getTitle();
   Widget? getSubTitle();
+  Widget? getTitle();
 }

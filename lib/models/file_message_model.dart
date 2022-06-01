@@ -1,6 +1,9 @@
-import 'package:lanchat/models/message_model.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:lanchat/models/message_model.dart';
 
 class FileMessageModel extends MessageModel {
   final PlatformFile file;
@@ -8,17 +11,13 @@ class FileMessageModel extends MessageModel {
       : super(isMe: isMe, time: time);
 
   @override
-  String getMessage() =>
-      "${super.getMessage()}${file.name}\n${String.fromCharCodes(file.bytes!)}";
+  List<int> getMessage() => utf8.encode(jsonEncode({
+        'filename': utf8.encode(file.name),
+        'filedata': List<int>.from(file.bytes!)
+      }));
 
   @override
   String getMessageType() => "File";
-
-  @override
-  Widget? getTitle() => Align(
-        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: Text(file.name),
-      );
 
   @override
   Widget? getSubTitle() {
@@ -33,4 +32,10 @@ class FileMessageModel extends MessageModel {
         );
     }
   }
+
+  @override
+  Widget? getTitle() => Align(
+        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+        child: Text(file.name),
+      );
 }
