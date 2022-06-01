@@ -11,10 +11,10 @@ class FileMessageModel extends MessageModel {
       : super(isMe: isMe, time: time);
 
   @override
-  List<int> getMessage() => utf8.encode(jsonEncode({
-        'filename': utf8.encode(file.name),
-        'filedata': List<int>.from(file.bytes!)
-      }));
+  String getMessage() => jsonEncode({
+        'filename': base64.encode(utf8.encode(file.name)),
+        'filedata': base64.encode(file.bytes!),
+      });
 
   @override
   String getMessageType() => "File";

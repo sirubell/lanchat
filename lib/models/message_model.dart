@@ -7,7 +7,7 @@ abstract class MessageModel {
   final DateTime time;
   MessageModel({required this.isMe, required this.time});
 
-  List<int> getMessage();
+  String getMessage();
   String getMessageType();
 
   Widget? getSubTitle();

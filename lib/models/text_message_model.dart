@@ -10,7 +10,7 @@ class TextMessageModel extends MessageModel {
       : super(isMe: isMe, time: time);
 
   @override
-  List<int> getMessage() => utf8.encode(text);
+  String getMessage() => base64.encode(utf8.encode(text));
 
   @override
   String getMessageType() => "Text";

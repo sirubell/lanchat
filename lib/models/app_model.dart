@@ -19,6 +19,8 @@ class AppModel extends ChangeNotifier {
   ServerSocket? server;
   Function? showSnackBar;
 
+  String get base64Name => base64.encode(utf8.encode(name));
+
   AppModel() {
     final info = NetworkInfo();
     info.getWifiIP().then((value) => _ip = value);
@@ -38,7 +40,7 @@ class AppModel extends ChangeNotifier {
 
   Future<void> addFriend(String ip) async {
     final client = await Socket.connect(ip, port);
-    client.write(jsonEncode({'name': utf8.encode(name), 'action': 'AskName'}));
+    client.write(jsonEncode({'name': base64Name, 'action': 'AskName'}));
     client.close();
     _handleConnection(client);
   }
@@ -51,7 +53,7 @@ class AppModel extends ChangeNotifier {
 
     final data = jsonEncode({
       'action': message.getMessageType(),
-      'name': utf8.encode(name),
+      'name': base64Name,
       'time': message.time.toString(),
       'data': message.getMessage(),
     });
@@ -76,7 +78,7 @@ class AppModel extends ChangeNotifier {
 
   void _handleAskName(Socket client) {
     client.write(jsonEncode({
-      'name': utf8.encode(name),
+      'name': base64Name,
       'action': 'ReplyName',
     }));
     client.close();
@@ -88,13 +90,12 @@ class AppModel extends ChangeNotifier {
     client.listen((Uint8List data) {
       buffer.addAll(data);
     }, onDone: () {
-      // debugPrint(String.fromCharCodes(buffer));
       Map<String, dynamic> json = jsonDecode(String.fromCharCodes(buffer));
 
       String action = json['action'];
-      String name = utf8.decode(json['name'].cast<int>());
+      String name = utf8.decode(base64.decode(json['name']));
       String? time = json['time'];
-      List<int>? data = json['data']?.cast<int>();
+      String? data = json['data'];
 
       _ensureFriendExists(ip, name);
 
@@ -117,10 +118,10 @@ class AppModel extends ChangeNotifier {
     });
   }
 
-  void _handleFile(String ip, String time, List<int> data) {
-    Map<String, dynamic> file = jsonDecode(String.fromCharCodes(data));
-    String filename = utf8.decode(file['filename'].cast<int>());
-    Uint8List filedata = Uint8List.fromList(file['filedata'].cast<int>());
+  void _handleFile(String ip, String time, String data) {
+    Map<String, dynamic> file = jsonDecode(data);
+    String filename = utf8.decode(base64.decode(file['filename']));
+    Uint8List filedata = base64.decode(file['filedata']);
 
     _ensureFriendExists(ip, name);
 
@@ -140,8 +141,8 @@ class AppModel extends ChangeNotifier {
     // do nothing
   }
 
-  void _handleText(String ip, String time, List<int> data) {
-    String text = utf8.decode(data);
+  void _handleText(String ip, String time, String data) {
+    String text = utf8.decode(base64.decode(data));
 
     _friends[ip]!.messages.add(TextMessageModel(
           isMe: false,
