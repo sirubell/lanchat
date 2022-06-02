@@ -25,11 +25,11 @@ class _TextComposerState extends State<TextComposer> {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => _handleFileSubmitted(widget.ip, FileType.any),
+            onPressed: () => _handleFileSubmitted(FileType.any),
             icon: const Icon(Icons.file_upload),
           ),
           IconButton(
-            onPressed: () => _handleFileSubmitted(widget.ip, FileType.image),
+            onPressed: () => _handleFileSubmitted(FileType.image),
             icon: const Icon(Icons.image),
           ),
           Flexible(
@@ -42,14 +42,15 @@ class _TextComposerState extends State<TextComposer> {
                 });
               },
               onSubmitted: (text) {
-                _handleTextSubmitted(widget.ip, text);
+                _handleTextSubmitted(text);
               },
             ),
           ),
           IconButton(
             onPressed: _isComposing
-                ? () =>
-                    _handleTextSubmitted(widget.ip, _textEditingComposer.text)
+                ? () {
+                    _handleTextSubmitted(_textEditingComposer.text);
+                  }
                 : null,
             icon: const Icon(Icons.send),
           ),
@@ -58,24 +59,24 @@ class _TextComposerState extends State<TextComposer> {
     );
   }
 
-  void _handleFileSubmitted(String ip, FileType type) {
+  void _handleFileSubmitted(FileType type) {
     FilePicker.platform.pickFiles(withData: true, type: type).then((result) {
       if (result != null) {
         context.read<AppModel>().sendMessage(
-            ip,
+            widget.ip,
             FileMessageModel(
                 isMe: true, time: DateTime.now(), file: result.files[0]));
       }
     });
   }
 
-  void _handleTextSubmitted(String ip, String text) {
+  void _handleTextSubmitted(String text) {
     if (text.isEmpty) return;
 
     _textEditingComposer.clear();
     _focusNode.requestFocus();
     _isComposing = false;
-    context.read<AppModel>().sendMessage(
-        ip, TextMessageModel(isMe: true, time: DateTime.now(), text: text));
+    context.read<AppModel>().sendMessage(widget.ip,
+        TextMessageModel(isMe: true, time: DateTime.now(), text: text));
   }
 }
