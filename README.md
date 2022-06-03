@@ -16,17 +16,6 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 ## Screenshot
-### Main Screen
-![Main Screen](examples/main_screen.png)
-
-### Settings
-![Settings](examples/settings.png)
-
-### Add a New Friend
-![Add a New Friend](examples/add_friend.png)
-
-### Chat
-![Chat](examples/chat.png)
-
-### Send Image
-![Send Image](examples/send_image.png)
+| [Main Screen](examples/main_screen.png) | ![Settings](examples/settings.png)     | ![Add a New Friend](examples/add_friend.png) |
+|-----------------------------------------|----------------------------------------|----------------------------------------------|
+| ![Chat](examples/chat.png)              | ![Send Image](examples/send_image.png) |                                              |
