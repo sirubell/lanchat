@@ -17,16 +17,16 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Screenshot
 ### Main Screen
-![Main Screen](examples/flutter_01.png)
+![Main Screen](examples/main_screen.png)
 
 ### Settings
-![Settings](examples/flutter_02.png)
+![Settings](examples/settings.png)
 
 ### Add a New Friend
-![Add a New Friend](examples/flutter_04.png)
+![Add a New Friend](examples/add_friend.png)
 
 ### Chat
-![Chat](examples/flutter_06.png)
+![Chat](examples/chat.png)
 
 ### Send Image
-![Send Image](examples/flutter_07.png)
+![Send Image](examples/send_image.png)
