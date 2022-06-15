@@ -24,6 +24,7 @@ class FileMessageModel extends MessageModel {
     switch (file.extension) {
       case "png":
       case "jpg":
+      case "jpeg":
         return Image.memory(file.bytes!);
       default:
         return Align(

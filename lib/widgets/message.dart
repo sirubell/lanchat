@@ -7,9 +7,20 @@ class Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: message.getTitle(),
-      subtitle: message.getSubTitle(),
+    return FractionallySizedBox(
+      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
+      widthFactor: 0.8,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: message.isMe ? Colors.green.shade100 : Colors.blue.shade100,
+        ),
+        margin: const EdgeInsets.all(10),
+        child: ListTile(
+          title: message.getTitle(),
+          subtitle: message.getSubTitle(),
+        ),
+      ),
     );
   }
 }

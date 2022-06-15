@@ -45,6 +45,11 @@ class AppModel extends ChangeNotifier {
     _handleConnection(client);
   }
 
+  Future<void> setName(String name) async {
+    this.name = name;
+    showSnackBar?.call('Successfully changed name');
+  }
+
   FriendModel? friend(String ip) => _friends[ip];
 
   Future<void> sendMessage(String ip, MessageModel message) async {

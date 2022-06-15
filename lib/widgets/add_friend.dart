@@ -19,22 +19,29 @@ class _AddFriendState extends State<AddFriend> {
         title: const Text('Add a New Friend by IP'),
       ),
       body: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: TextField(
-                  controller: _textIPController,
-                  onSubmitted: (text) => _handleSubmitted(text),
-                  decoration: const InputDecoration.collapsed(
-                    hintText: 'IP',
-                  )),
-            ),
-            ElevatedButton(
-              onPressed: () => _handleSubmitted(_textIPController.text),
-              child: const Text('Add'),
-            ),
-          ],
+        child: FractionallySizedBox(
+          widthFactor: 0.8,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  child: TextField(
+                    controller: _textIPController,
+                    onSubmitted: (text) => _handleSubmitted(text),
+                    decoration: const InputDecoration(
+                      hintText: 'IP',
+                    ),
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => _handleSubmitted(_textIPController.text),
+                child: const Text('Add'),
+              ),
+            ],
+          ),
         ),
       ),
     );

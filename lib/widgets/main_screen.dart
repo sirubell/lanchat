@@ -18,15 +18,17 @@ class MainScreen extends StatelessWidget {
         title: const Text('LanChat'),
         actions: [
           IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.pushNamed(context, '/add-friend');
-              }),
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.pushNamed(context, '/add-friend');
+            },
+          ),
           IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.pushNamed(context, '/settings');
-              }),
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+          ),
         ],
       ),
       body: Column(
@@ -37,7 +39,9 @@ class MainScreen extends StatelessWidget {
             child: ListView.builder(
               itemBuilder: (_, index) {
                 return FriendInfo(
-                    name: friends[index].name, ip: friends[index].ip);
+                  name: friends[index].name,
+                  ip: friends[index].ip,
+                );
               },
               itemCount: friends.length,
             ),

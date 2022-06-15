@@ -24,10 +24,10 @@ class _TextComposerState extends State<TextComposer> {
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => _handleFileSubmitted(FileType.any),
-            icon: const Icon(Icons.file_upload),
-          ),
+          /* IconButton( */
+          /*   onPressed: () => _handleFileSubmitted(FileType.any), */
+          /*   icon: const Icon(Icons.file_upload), */
+          /* ), */
           IconButton(
             onPressed: () => _handleFileSubmitted(FileType.image),
             icon: const Icon(Icons.image),
